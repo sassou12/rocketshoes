@@ -1,6 +1,6 @@
 import React from 'react';
 import { bindActionCreators } from 'redux';
-import { connect } from 'react-redux';
+import { connect, useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import {
   MdRemoveCircleOutline,
@@ -12,7 +12,22 @@ import { formatPrice } from '../../util/format';
 import { Container, ProductTable, Total } from './styles';
 import * as CartActions from '../../store/modules/cart/actions';
 
-function Cart({ cart, total, removeFromCart, updateAmountRequest }) {
+function Cart({ removeFromCart, updateAmountRequest }) {
+  const cart = useSelector(state =>
+    state.cart.map(p => ({
+      ...p,
+      subtotal: formatPrice(p.price * p.amount),
+    }))
+  );
+
+  const total = useSelector(state => {
+    return formatPrice(
+      state.cart.reduce((totalCart, product) => {
+        return totalCart + product.price * product.amount;
+      }, 0)
+    );
+  });
+
   function increment(product) {
     updateAmountRequest(product.id, product.amount + 1);
   }
@@ -92,31 +107,7 @@ function Cart({ cart, total, removeFromCart, updateAmountRequest }) {
   );
 }
 
-const mapStateToProps = state => ({
-  cart: state.cart.map(p => ({
-    ...p,
-    subtotal: formatPrice(p.price * p.amount),
-  })),
-  total: formatPrice(
-    state.cart.reduce((total, product) => {
-      return total + product.price * product.amount;
-    }, 0)
-  ),
-});
-
 Cart.propTypes = {
-  cart: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      priceFormatted: PropTypes.string.isRequired,
-      title: PropTypes.string.isRequired,
-      image: PropTypes.string.isRequired,
-      amount: PropTypes.number.isRequired,
-      price: PropTypes.number.isRequired,
-      subtotal: PropTypes.string.isRequired,
-    })
-  ).isRequired,
-  total: PropTypes.string.isRequired,
   removeFromCart: PropTypes.func.isRequired,
   updateAmountRequest: PropTypes.func.isRequired,
 };
@@ -124,4 +115,4 @@ Cart.propTypes = {
 const mapDispatchToProps = dispatch =>
   bindActionCreators(CartActions, dispatch);
 
-export default connect(mapStateToProps, mapDispatchToProps)(Cart);
+export default connect(null, mapDispatchToProps)(Cart);
